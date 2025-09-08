@@ -5,39 +5,122 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>NeuraBot</title>
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-  <div id="particles-js"></div>
-  <div id="chat-wrapper">
-    <div id="chat-container">
-      <div id="chat-header">
-        <h2>NeuraBot <span class="pulse">🤖</span></h2>
-        <div id="typing-indicator">
-          <span></span>
-          <span></span>
-          <span></span>
+  <div id="app-container">
+    <!-- Sidebar for additional features -->
+    <div id="sidebar">
+      <div id="sidebar-header">
+        <h3>NeuraBot</h3>
+        <button id="close-sidebar"><i class="fas fa-times"></i></button>
+      </div>
+      <div id="sidebar-content">
+        <div class="sidebar-section">
+          <h4>Theme</h4>
+          <div class="theme-switcher">
+            <button data-theme="dark" class="theme-btn active">Dark</button>
+            <button data-theme="light" class="theme-btn">Light</button>
+            <button data-theme="purple" class="theme-btn">Purple</button>
+          </div>
+        </div>
+        
+        <div class="sidebar-section">
+          <h4>Chat Options</h4>
+          <button id="clear-chat" class="sidebar-btn">
+            <i class="fas fa-trash"></i> Clear Chat
+          </button>
+          <button id="export-chat" class="sidebar-btn">
+            <i class="fas fa-download"></i> Export Chat
+          </button>
+        </div>
+        
+        <div class="sidebar-section">
+          <h4>Settings</h4>
+          <div class="setting-item">
+            <label for="voice-input">Voice Input</label>
+            <label class="switch">
+              <input type="checkbox" id="voice-input-toggle">
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="setting-item">
+            <label for="message-sounds">Message Sounds</label>
+            <label class="switch">
+              <input type="checkbox" id="message-sounds-toggle" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
         </div>
       </div>
-      <div id="chat-messages"></div>
-      <div id="chat-input-container">
-        <input type="text" id="chat-input" placeholder="Ask me anything...">
-        <button id="send-btn">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M22 2L11 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </button>
+    </div>
+
+    <!-- Main chat interface -->
+    <div id="chat-wrapper">
+      <div id="chat-container">
+        <div id="chat-header">
+          <button id="menu-btn"><i class="fas fa-bars"></i></button>
+          <h2>NeuraBot <span class="pulse">🤖</span></h2>
+          <div id="header-controls">
+            <button id="theme-toggle"><i class="fas fa-moon"></i></button>
+            <button id="user-profile"><i class="fas fa-user"></i></button>
+          </div>
+        </div>
+        
+        <div id="chat-messages"></div>
+        
+        <div id="quick-replies">
+          <button class="quick-reply" data-message="What can you do?">What can you do?</button>
+          <button class="quick-reply" data-message="Tell me a joke">Tell me a joke</button>
+          <button class="quick-reply" data-message="How does AI work?">How does AI work?</button>
+        </div>
+        
+        <div id="chat-input-container">
+          <button id="voice-input-btn"><i class="fas fa-microphone"></i></button>
+          <input type="text" id="chat-input" placeholder="Type your message...">
+          <button id="send-btn">
+            <i class="fas fa-paper-plane"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- User profile modal -->
+    <div id="profile-modal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Your Profile</h3>
+          <button class="close-modal"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+          <div class="avatar-selection">
+            <h4>Choose Avatar</h4>
+            <div class="avatars">
+              <div class="avatar" data-avatar="🐵">🐵</div>
+              <div class="avatar" data-avatar="🦊">🦊</div>
+              <div class="avatar" data-avatar="🐶">🐶</div>
+              <div class="avatar" data-avatar="🐱">🐱</div>
+              <div class="avatar" data-avatar="🦁">🦁</div>
+              <div class="avatar" data-avatar="🐮">🐮</div>
+            </div>
+          </div>
+          <div class="name-input">
+            <label for="user-name">Your Name</label>
+            <input type="text" id="user-name" placeholder="Enter your name">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="save-profile">Save Changes</button>
+        </div>
       </div>
     </div>
   </div>
-  <!-- Load particles.js locally as fallback -->
-  <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
-  <script>
-    // Fallback if CDN fails
-    if (typeof particlesJS !== 'function') {
-      document.write('<script src="particles.min.js"><\/script>');
-    }
-  </script>
+
+  <!-- Notification element -->
+  <div id="notification"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
