@@ -771,6 +771,83 @@ input:checked + .slider:before {
 .typing-animation span:nth-child(3) {
     animation-delay: 0.4s;
 }
+#user-profile {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  overflow: hidden;
+  padding: 0;
+  background: none;
+  border: 2px solid var(--accent-primary);
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#user-profile:hover {
+  transform: scale(1.1);
+  border-color: var(--accent-secondary);
+}
+
+#current-avatar {
+  width: 36px;
+  height: 36px;
+}
+
+/* Avatar selection in modal */
+.avatars {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+  margin-top: 15px;
+}
+
+.avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--bg-tertiary);
+  cursor: pointer;
+  transition: var(--transition);
+  overflow: hidden;
+  padding: 0;
+  border: 2px solid transparent;
+}
+
+.avatar-svg {
+  width: 70px;
+  height: 70px;
+}
+
+.avatar:hover {
+  transform: scale(1.1);
+  border-color: var(--accent-primary);
+}
+
+.avatar.selected {
+  border: 3px solid var(--accent-primary);
+  box-shadow: 0 0 15px rgba(138, 99, 210, 0.5);
+}
+
+/* Sender avatar in messages */
+.message-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.sender-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  margin-right: 10px;
+  object-fit: cover;
+  border: 1px solid var(--accent-primary);
+}
 
 @keyframes typing {
     0%, 60%, 100% {

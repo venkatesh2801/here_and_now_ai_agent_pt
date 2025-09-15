@@ -17,6 +17,7 @@ const saveProfileBtn = document.getElementById("save-profile");
 const quickReplies = document.querySelectorAll(".quick-reply");
 const voiceInputToggle = document.getElementById("voice-input-toggle");
 const messageSoundsToggle = document.getElementById("message-sounds-toggle");
+const currentAvatar = document.getElementById("current-avatar");
 
 // State variables
 let isListening = false;
@@ -24,9 +25,8 @@ let recognition = null;
 let currentTheme = "dark";
 let userData = {
   name: "User",
-  avatar: "👤"
+  avatarType: "male" // Change this line
 };
-
 // Initialize the application
 function initApp() {
   loadUserData();
@@ -52,11 +52,41 @@ function loadUserData() {
     
     // Set selected avatar
     document.querySelectorAll(".avatar").forEach(avatar => {
-      if (avatar.dataset.avatar === userData.avatar) {
+      if (avatar.dataset.avatar === userData.avatarType) {
         avatar.classList.add("selected");
       }
     });
+    
+    // Update current avatar in header
+    updateCurrentAvatar(); // Add this line
   }
+}
+function updateCurrentAvatar() {
+  const avatarType = userData.avatarType;
+  let svgContent = '';
+  
+  switch(avatarType) {
+    case 'male':
+      svgContent = '<circle cx="50" cy="35" r="20" fill="#4a8cff"/><rect x="40" y="55" width="20" height="35" fill="#4a8cff"/><rect x="30" y="65" width="10" height="25" fill="#4a8cff"/><rect x="60" y="65" width="10" height="25" fill="#4a8cff"/>';
+      break;
+    case 'female':
+      svgContent = '<circle cx="50" cy="35" r="20" fill="#ff6b8b"/><path d="M40,55 L60,55 L50,90 Z" fill="#ff6b8b"/><rect x="30" y="65" width="10" height="25" fill="#ff6b8b"/><rect x="60" y="65" width="10" height="25" fill="#ff6b8b"/>';
+      break;
+    case 'robot':
+      svgContent = '<rect x="30" y="25" width="40" height="45" rx="5" fill="#7e57c2"/><circle cx="40" cy="40" r="5" fill="#fff"/><circle cx="60" cy="40" r="5" fill="#fff"/><rect x="40" y="55" width="20" height="10" rx="2" fill="#fff"/><rect x="20" y="70" width="20" height="25" rx="5" fill="#7e57c2"/><rect x="60" y="70" width="20" height="25" rx="5" fill="#7e57c2"/>';
+      break;
+    case 'ai':
+      svgContent = '<circle cx="50" cy="50" r="40" fill="#26c6da"/><path d="M35,40 L45,60 L30,60 Z" fill="#fff"/><path d="M65,40 L75,60 L60,60 Z" fill="#fff"/><path d="M45,70 L55,70 L50,80 Z" fill="#fff"/>';
+      break;
+    case 'cyber':
+      svgContent = '<rect x="25" y="25" width="50" height="50" rx="5" fill="#ff7043"/><circle cx="40" cy="40" r="5" fill="#fff"/><circle cx="60" cy="40" r="5" fill="#fff"/><rect x="40" y="55" width="20" height="10" rx="2" fill="#fff"/><line x1="30" y1="70" x2="70" y2="70" stroke="#fff" stroke-width="3"/>';
+      break;
+    case 'astro':
+      svgContent = '<circle cx="50" cy="40" r="25" fill="#bdbdbd"/><circle cx="50" cy="40" r="15" fill="#fff"/><rect x="40" y="65" width="20" height="25" fill="#bdbdbd"/><rect x="30" y="75" width="10" height="15" fill="#bdbdbd"/><rect x="60" y="75" width="10" height="15" fill="#bdbdbd"/>';
+      break;
+  }
+  
+  currentAvatar.innerHTML = svgContent;
 }
 
 // Save user data to localStorage
@@ -135,6 +165,40 @@ function addMessage(content, sender, saveToHistory = true, timestamp = null) {
   const messageHeader = document.createElement("div");
   messageHeader.classList.add("message-header");
   
+  // Add sender avatar
+  const senderAvatar = document.createElement("div");
+  senderAvatar.classList.add("sender-avatar");
+  
+  let avatarSvg = '';
+  if (sender === "user") {
+    // Use the user's selected avatar
+    switch(userData.avatarType) {
+      case 'male':
+        avatarSvg = '<svg viewBox="0 0 100 100" width="28" height="28"><circle cx="50" cy="35" r="20" fill="#4a8cff"/><rect x="40" y="55" width="20" height="35" fill="#4a8cff"/><rect x="30" y="65" width="10" height="25" fill="#4a8cff"/><rect x="60" y="65" width="10" height="25" fill="#4a8cff"/></svg>';
+        break;
+      case 'female':
+        avatarSvg = '<svg viewBox="0 0 100 100" width="28" height="28"><circle cx="50" cy="35" r="20" fill="#ff6b8b"/><path d="M40,55 L60,55 L50,90 Z" fill="#ff6b8b"/><rect x="30" y="65" width="10" height="25" fill="#ff6b8b"/><rect x="60" y="65" width="10" height="25" fill="#ff6b8b"/></svg>';
+        break;
+      case 'robot':
+        avatarSvg = '<svg viewBox="0 0 100 100" width="28" height="28"><rect x="30" y="25" width="40" height="45" rx="5" fill="#7e57c2"/><circle cx="40" cy="40" r="5" fill="#fff"/><circle cx="60" cy="40" r="5" fill="#fff"/><rect x="40" y="55" width="20" height="10" rx="2" fill="#fff"/><rect x="20" y="70" width="20" height="25" rx="5" fill="#7e57c2"/><rect x="60" y="70" width="20" height="25" rx="5" fill="#7e57c2"/></svg>';
+        break;
+      case 'ai':
+        avatarSvg = '<svg viewBox="0 0 100 100" width="28" height="28"><circle cx="50" cy="50" r="40" fill="#26c6da"/><path d="M35,40 L45,60 L30,60 Z" fill="#fff"/><path d="M65,40 L75,60 L60,60 Z" fill="#fff"/><path d="M45,70 L55,70 L50,80 Z" fill="#fff"/></svg>';
+        break;
+      case 'cyber':
+        avatarSvg = '<svg viewBox="0 0 100 100" width="28" height="28"><rect x="25" y="25" width="50" height="50" rx="5" fill="#ff7043"/><circle cx="40" cy="40" r="5" fill="#fff"/><circle cx="60" cy="40" r="5" fill="#fff"/><rect x="40" y="55" width="20" height="10" rx="2" fill="#fff"/><line x1="30" y1="70" x2="70" y2="70" stroke="#fff" stroke-width="3"/></svg>';
+        break;
+      case 'astro':
+        avatarSvg = '<svg viewBox="0 0 100 100" width="28" height="28"><circle cx="50" cy="40" r="25" fill="#bdbdbd"/><circle cx="50" cy="40" r="15" fill="#fff"/><rect x="40" y="65" width="20" height="25" fill="#bdbdbd"/><rect x="30" y="75" width="10" height="15" fill="#bdbdbd"/><rect x="60" y="75" width="10" height="15" fill="#bdbdbd"/></svg>';
+        break;
+    }
+  } else {
+    // Bot avatar
+    avatarSvg = '<svg viewBox="0 0 100 100" width="28" height="28"><circle cx="50" cy="50" r="40" fill="#7e57c2"/><circle cx="40" cy="40" r="5" fill="#fff"/><circle cx="60" cy="40" r="5" fill="#fff"/><path d="M35,65 L65,65 L65,70 L35,70 Z" fill="#fff"/></svg>';
+  }
+  
+  senderAvatar.innerHTML = avatarSvg;
+  
   const senderName = document.createElement("span");
   senderName.classList.add("sender-name");
   senderName.textContent = sender === "user" ? userData.name : "NeuraBot";
@@ -157,6 +221,7 @@ function addMessage(content, sender, saveToHistory = true, timestamp = null) {
     hour: '2-digit', minute: '2-digit' 
   });
   
+  messageHeader.appendChild(senderAvatar);
   messageHeader.appendChild(senderName);
   messageHeader.appendChild(messageActions);
   messageHeader.appendChild(timeStamp);
@@ -171,7 +236,7 @@ function addMessage(content, sender, saveToHistory = true, timestamp = null) {
     hljs.highlightElement(block);
   });
   
-  // Assemble message (removed separate footer)
+  // Assemble message
   msgDiv.appendChild(messageHeader);
   msgDiv.appendChild(messageContent);
   
@@ -365,14 +430,15 @@ function setupEventListeners() {
   closeModalBtn.addEventListener("click", toggleProfileModal);
   saveProfileBtn.addEventListener("click", saveProfile);
   
-  // Avatar selection
-  document.querySelectorAll(".avatar").forEach(avatar => {
-    avatar.addEventListener("click", () => {
-      document.querySelectorAll(".avatar").forEach(a => a.classList.remove("selected"));
-      avatar.classList.add("selected");
-      userData.avatar = avatar.dataset.avatar;
-    });
+// Avatar selection
+document.querySelectorAll(".avatar").forEach(avatar => {
+  avatar.addEventListener("click", () => {
+    document.querySelectorAll(".avatar").forEach(a => a.classList.remove("selected"));
+    avatar.classList.add("selected");
+    userData.avatarType = avatar.dataset.avatar; // Change this line
+    updateCurrentAvatar(); // Add this line
   });
+});
   
   // Quick replies
   quickReplies.forEach(reply => {
@@ -404,10 +470,53 @@ function setupEventListeners() {
 // Save profile changes
 function saveProfile() {
   userData.name = document.getElementById("user-name").value || "User";
+  
+  // Update current avatar in header
+  updateCurrentAvatar();
+  
+  // Update all existing user messages with new avatar
+  updateAllMessageAvatars();
+  
   saveUserData();
   toggleProfileModal();
 }
-
+function updateAllMessageAvatars() {
+  const userMessages = document.querySelectorAll('.message.user');
+  
+  userMessages.forEach(message => {
+    const avatarContainer = message.querySelector('.sender-avatar');
+    if (avatarContainer) {
+      let avatarSvg = '';
+      switch(userData.avatarType) {
+        case 'male':
+          avatarSvg = '<svg viewBox="0 0 100 100" width="28" height="28"><circle cx="50" cy="35" r="20" fill="#4a8cff"/><rect x="40" y="55" width="20" height="35" fill="#4a8cff"/><rect x="30" y="65" width="10" height="25" fill="#4a8cff"/><rect x="60" y="65" width="10" height="25" fill="#4a8cff"/></svg>';
+          break;
+        case 'female':
+          avatarSvg = '<svg viewBox="0 0 100 100" width="28" height="28"><circle cx="50" cy="35" r="20" fill="#ff6b8b"/><path d="M40,55 L60,55 L50,90 Z" fill="#ff6b8b"/><rect x="30" y="65" width="10" height="25" fill="#ff6b8b"/><rect x="60" y="65" width="10" height="25" fill="#ff6b8b"/></svg>';
+          break;
+        case 'robot':
+          avatarSvg = '<svg viewBox="0 0 100 100" width="28" height="28"><rect x="30" y="25" width="40" height="45" rx="5" fill="#7e57c2"/><circle cx="40" cy="40" r="5" fill="#fff"/><circle cx="60" cy="40" r="5" fill="#fff"/><rect x="40" y="55" width="20" height="10" rx="2" fill="#fff"/><rect x="20" y="70" width="20" height="25" rx="5" fill="#7e57c2"/><rect x="60" y="70" width="20" height="25" rx="5" fill="#7e57c2"/></svg>';
+          break;
+        case 'ai':
+          avatarSvg = '<svg viewBox="0 0 100 100" width="28" height="28"><circle cx="50" cy="50" r="40" fill="#26c6da"/><path d="M35,40 L45,60 L30,60 Z" fill="#fff"/><path d="M65,40 L75,60 L60,60 Z" fill="#fff"/><path d="M45,70 L55,70 L50,80 Z" fill="#fff"/></svg>';
+          break;
+        case 'cyber':
+          avatarSvg = '<svg viewBox="0 0 100 100" width="28" height="28"><rect x="25" y="25" width="50" height="50" rx="5" fill="#ff7043"/><circle cx="40" cy="40" r="5" fill="#fff"/><circle cx="60" cy="40" r="5" fill="#fff"/><rect x="40" y="55" width="20" height="10" rx="2" fill="#fff"/><line x1="30" y1="70" x2="70" y2="70" stroke="#fff" stroke-width="3"/></svg>';
+          break;
+        case 'astro':
+          avatarSvg = '<svg viewBox="0 0 100 100" width="28" height="28"><circle cx="50" cy="40" r="25" fill="#bdbdbd"/><circle cx="50" cy="40" r="15" fill="#fff"/><rect x="40" y="65" width="20" height="25" fill="#bdbdbd"/><rect x="30" y="75" width="10" height="15" fill="#bdbdbd"/><rect x="60" y="75" width="10" height="15" fill="#bdbdbd"/></svg>';
+          break;
+      }
+      avatarContainer.innerHTML = avatarSvg;
+    }
+    
+    // Also update the sender name if it changed
+    const senderName = message.querySelector('.sender-name');
+    if (senderName && userData.name) {
+      senderName.textContent = userData.name;
+    }
+  });
+}
 // Send message to backend
 function sendMessage() {
   const message = chatInput.value.trim();
