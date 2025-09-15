@@ -16,7 +16,6 @@ const closeModalBtn = document.querySelector(".close-modal");
 const saveProfileBtn = document.getElementById("save-profile");
 const quickReplies = document.querySelectorAll(".quick-reply");
 const voiceInputToggle = document.getElementById("voice-input-toggle");
-const messageSoundsToggle = document.getElementById("message-sounds-toggle");
 const currentAvatar = document.getElementById("current-avatar");
 
 // State variables
@@ -25,8 +24,9 @@ let recognition = null;
 let currentTheme = "dark";
 let userData = {
   name: "User",
-  avatarType: "male" // Change this line
+  avatarType: "male"
 };
+
 // Initialize the application
 function initApp() {
   loadUserData();
@@ -58,9 +58,11 @@ function loadUserData() {
     });
     
     // Update current avatar in header
-    updateCurrentAvatar(); // Add this line
+    updateCurrentAvatar();
   }
 }
+
+// Update the current avatar display
 function updateCurrentAvatar() {
   const avatarType = userData.avatarType;
   let svgContent = '';
@@ -250,26 +252,49 @@ function addMessage(content, sender, saveToHistory = true, timestamp = null) {
   
   chatMessages.scrollTop = chatMessages.scrollHeight;
   
-  // Play sound if enabled
-  if (localStorage.getItem("neurabot_sounds") !== "false") {
-    playMessageSound(sender);
-  }
-  
   // Save to history if needed
   if (saveToHistory) {
     saveChatHistory();
   }
 }
-function saveChatHistory() {
-  const messages = [];
-  document.querySelectorAll(".message").forEach(msgEl => {
-    const sender = msgEl.classList.contains("user") ? "user" : "bot";
-    const content = msgEl.querySelector(".message-content").textContent;
-    const timestamp = msgEl.querySelector(".timestamp").textContent;
-    messages.push({ sender, content, timestamp });
-  });
+
+// Update avatars in all existing messages
+function updateAllMessageAvatars() {
+  const userMessages = document.querySelectorAll('.message.user');
   
-  localStorage.setItem("neurabot_chat_history", JSON.stringify(messages));
+  userMessages.forEach(message => {
+    const avatarContainer = message.querySelector('.sender-avatar');
+    if (avatarContainer) {
+      let avatarSvg = '';
+      switch(userData.avatarType) {
+        case 'male':
+          avatarSvg = '<svg viewBox="0 0 100 100" width="28" height="28"><circle cx="50" cy="35" r="20" fill="#4a8cff"/><rect x="40" y="55" width="20" height="35" fill="#4a8cff"/><rect x="30" y="65" width="10" height="25" fill="#4a8cff"/><rect x="60" y="65" width="10" height="25" fill="#4a8cff"/></svg>';
+          break;
+        case 'female':
+          avatarSvg = '<svg viewBox="0 0 100 100" width="28" height="28"><circle cx="50" cy="35" r="20" fill="#ff6b8b"/><path d="M40,55 L60,55 L50,90 Z" fill="#ff6b8b"/><rect x="30" y="65" width="10" height="25" fill="#ff6b8b"/><rect x="60" y="65" width="10" height="25" fill="#ff6b8b"/></svg>';
+          break;
+        case 'robot':
+          avatarSvg = '<svg viewBox="0 0 100 100" width="28" height="28"><rect x="30" y="25" width="40" height="45" rx="5" fill="#7e57c2"/><circle cx="40" cy="40" r="5" fill="#fff"/><circle cx="60" cy="40" r="5" fill="#fff"/><rect x="40" y="55" width="20" height="10" rx="2" fill="#fff"/><rect x="20" y="70" width="20" height="25" rx="5" fill="#7e57c2"/><rect x="60" y="70" width="20" height="25" rx="5" fill="#7e57c2"/></svg>';
+          break;
+        case 'ai':
+          avatarSvg = '<svg viewBox="0 0 100 100" width="28" height="28"><circle cx="50" cy="50" r="40" fill="#26c6da"/><path d="M35,40 L45,60 L30,60 Z" fill="#fff"/><path d="M65,40 L75,60 L60,60 Z" fill="#fff"/><path d="M45,70 L55,70 L50,80 Z" fill="#fff"/></svg>';
+          break;
+        case 'cyber':
+          avatarSvg = '<svg viewBox="0 0 100 100" width="28" height="28"><rect x="25" y="25" width="50" height="50" rx="5" fill="#ff7043"/><circle cx="40" cy="40" r="5" fill="#fff"/><circle cx="60" cy="40" r="5" fill="#fff"/><rect x="40" y="55" width="20" height="10" rx="2" fill="#fff"/><line x1="30" y1="70" x2="70" y2="70" stroke="#fff" stroke-width="3"/></svg>';
+          break;
+        case 'astro':
+          avatarSvg = '<svg viewBox="0 0 100 100" width="28" height="28"><circle cx="50" cy="40" r="25" fill="#bdbdbd"/><circle cx="50" cy="40" r="15" fill="#fff"/><rect x="40" y="65" width="20" height="25" fill="#bdbdbd"/><rect x="30" y="75" width="10" height="15" fill="#bdbdbd"/><rect x="60" y="75" width="10" height="15" fill="#bdbdbd"/></svg>';
+          break;
+      }
+      avatarContainer.innerHTML = avatarSvg;
+    }
+    
+    // Also update the sender name if it changed
+    const senderName = message.querySelector('.sender-name');
+    if (senderName && userData.name) {
+      senderName.textContent = userData.name;
+    }
+  });
 }
 
 // Copy message to clipboard
@@ -279,17 +304,6 @@ function copyMessage(text) {
   }).catch(err => {
     console.error("Failed to copy: ", err);
   });
-}
-
-// Play message sound
-function playMessageSound(sender) {
-  const audio = new Audio(
-    sender === "user" ? 
-    "https://assets.mixkit.co/sfx/preview/mixkit-select-click-1109.mp3" :
-    "https://assets.mixkit.co/sfx/preview/mixkit-happy-bell-alert-601.mp3"
-  );
-  audio.volume = 0.3;
-  audio.play().catch(e => console.log("Audio play failed:", e));
 }
 
 // Show notification
@@ -394,6 +408,20 @@ function toggleProfileModal() {
   profileModal.classList.toggle("show");
 }
 
+// Save profile changes
+function saveProfile() {
+  userData.name = document.getElementById("user-name").value || "User";
+  
+  // Update current avatar in header
+  updateCurrentAvatar();
+  
+  // Update all existing user messages with new avatar
+  updateAllMessageAvatars();
+  
+  saveUserData();
+  toggleProfileModal();
+}
+
 // Setup event listeners
 function setupEventListeners() {
   // Send message
@@ -430,15 +458,14 @@ function setupEventListeners() {
   closeModalBtn.addEventListener("click", toggleProfileModal);
   saveProfileBtn.addEventListener("click", saveProfile);
   
-// Avatar selection
-document.querySelectorAll(".avatar").forEach(avatar => {
-  avatar.addEventListener("click", () => {
-    document.querySelectorAll(".avatar").forEach(a => a.classList.remove("selected"));
-    avatar.classList.add("selected");
-    userData.avatarType = avatar.dataset.avatar; // Change this line
-    updateCurrentAvatar(); // Add this line
+  // Avatar selection
+  document.querySelectorAll(".avatar").forEach(avatar => {
+    avatar.addEventListener("click", () => {
+      document.querySelectorAll(".avatar").forEach(a => a.classList.remove("selected"));
+      avatar.classList.add("selected");
+      userData.avatarType = avatar.dataset.avatar;
+    });
   });
-});
   
   // Quick replies
   quickReplies.forEach(reply => {
@@ -455,68 +482,12 @@ document.querySelectorAll(".avatar").forEach(avatar => {
     voiceInputBtn.style.display = enabled ? "inline-flex" : "none";
   });
 
-  // Message sounds toggle
-  messageSoundsToggle.addEventListener("change", (e) => {
-    const enabled = e.target.checked;
-    localStorage.setItem("neurabot_sounds", enabled ? "true" : "false");
-  });
-
   // Profile name input
   document.getElementById("user-name").addEventListener("input", (e) => {
     userData.name = e.target.value;
   });
 }
 
-// Save profile changes
-function saveProfile() {
-  userData.name = document.getElementById("user-name").value || "User";
-  
-  // Update current avatar in header
-  updateCurrentAvatar();
-  
-  // Update all existing user messages with new avatar
-  updateAllMessageAvatars();
-  
-  saveUserData();
-  toggleProfileModal();
-}
-function updateAllMessageAvatars() {
-  const userMessages = document.querySelectorAll('.message.user');
-  
-  userMessages.forEach(message => {
-    const avatarContainer = message.querySelector('.sender-avatar');
-    if (avatarContainer) {
-      let avatarSvg = '';
-      switch(userData.avatarType) {
-        case 'male':
-          avatarSvg = '<svg viewBox="0 0 100 100" width="28" height="28"><circle cx="50" cy="35" r="20" fill="#4a8cff"/><rect x="40" y="55" width="20" height="35" fill="#4a8cff"/><rect x="30" y="65" width="10" height="25" fill="#4a8cff"/><rect x="60" y="65" width="10" height="25" fill="#4a8cff"/></svg>';
-          break;
-        case 'female':
-          avatarSvg = '<svg viewBox="0 0 100 100" width="28" height="28"><circle cx="50" cy="35" r="20" fill="#ff6b8b"/><path d="M40,55 L60,55 L50,90 Z" fill="#ff6b8b"/><rect x="30" y="65" width="10" height="25" fill="#ff6b8b"/><rect x="60" y="65" width="10" height="25" fill="#ff6b8b"/></svg>';
-          break;
-        case 'robot':
-          avatarSvg = '<svg viewBox="0 0 100 100" width="28" height="28"><rect x="30" y="25" width="40" height="45" rx="5" fill="#7e57c2"/><circle cx="40" cy="40" r="5" fill="#fff"/><circle cx="60" cy="40" r="5" fill="#fff"/><rect x="40" y="55" width="20" height="10" rx="2" fill="#fff"/><rect x="20" y="70" width="20" height="25" rx="5" fill="#7e57c2"/><rect x="60" y="70" width="20" height="25" rx="5" fill="#7e57c2"/></svg>';
-          break;
-        case 'ai':
-          avatarSvg = '<svg viewBox="0 0 100 100" width="28" height="28"><circle cx="50" cy="50" r="40" fill="#26c6da"/><path d="M35,40 L45,60 L30,60 Z" fill="#fff"/><path d="M65,40 L75,60 L60,60 Z" fill="#fff"/><path d="M45,70 L55,70 L50,80 Z" fill="#fff"/></svg>';
-          break;
-        case 'cyber':
-          avatarSvg = '<svg viewBox="0 0 100 100" width="28" height="28"><rect x="25" y="25" width="50" height="50" rx="5" fill="#ff7043"/><circle cx="40" cy="40" r="5" fill="#fff"/><circle cx="60" cy="40" r="5" fill="#fff"/><rect x="40" y="55" width="20" height="10" rx="2" fill="#fff"/><line x1="30" y1="70" x2="70" y2="70" stroke="#fff" stroke-width="3"/></svg>';
-          break;
-        case 'astro':
-          avatarSvg = '<svg viewBox="0 0 100 100" width="28" height="28"><circle cx="50" cy="40" r="25" fill="#bdbdbd"/><circle cx="50" cy="40" r="15" fill="#fff"/><rect x="40" y="65" width="20" height="25" fill="#bdbdbd"/><rect x="30" y="75" width="10" height="15" fill="#bdbdbd"/><rect x="60" y="75" width="10" height="15" fill="#bdbdbd"/></svg>';
-          break;
-      }
-      avatarContainer.innerHTML = avatarSvg;
-    }
-    
-    // Also update the sender name if it changed
-    const senderName = message.querySelector('.sender-name');
-    if (senderName && userData.name) {
-      senderName.textContent = userData.name;
-    }
-  });
-}
 // Send message to backend
 function sendMessage() {
   const message = chatInput.value.trim();
@@ -525,6 +496,9 @@ function sendMessage() {
   addMessage(message, "user");
   chatInput.value = "";
   sendBtn.disabled = true;
+  
+  // Show typing indicator
+  showTypingIndicator();
 
   fetch("http://127.0.0.1:5000/chat", {
     method: "POST",
@@ -533,9 +507,11 @@ function sendMessage() {
   })
     .then(res => res.json())
     .then(data => {
+      hideTypingIndicator();
       addMessage(data.reply, "bot");
     })
     .catch(err => {
+      hideTypingIndicator();
       addMessage("Sorry, I couldn't connect to the AI backend.", "bot");
       console.error("Chat error:", err);
     })
@@ -552,14 +528,37 @@ function loadTheme() {
   }
 }
 
-// Load voice input and sounds settings
+// Load voice input settings
 function loadSettings() {
   const voiceEnabled = localStorage.getItem("neurabot_voice_input");
   voiceInputToggle.checked = voiceEnabled !== "false";
   voiceInputBtn.style.display = voiceInputToggle.checked ? "inline-flex" : "none";
+}
 
-  const soundsEnabled = localStorage.getItem("neurabot_sounds");
-  messageSoundsToggle.checked = soundsEnabled !== "false";
+// Add typing indicator
+function showTypingIndicator() {
+  const typingDiv = document.createElement("div");
+  typingDiv.id = "typing-indicator";
+  typingDiv.classList.add("message", "bot", "typing");
+  typingDiv.innerHTML = `
+    <div class="message-header">
+      <span class="sender-name">NeuraBot</span>
+    </div>
+    <div class="typing-animation">
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
+  `;
+  chatMessages.appendChild(typingDiv);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function hideTypingIndicator() {
+  const typingIndicator = document.getElementById("typing-indicator");
+  if (typingIndicator) {
+    typingIndicator.remove();
+  }
 }
 
 // App entry point
@@ -568,60 +567,3 @@ window.addEventListener("DOMContentLoaded", () => {
   loadTheme();
   loadSettings();
 });
-// Add typing indicator
-function showTypingIndicator() {
-    const typingDiv = document.createElement("div");
-    typingDiv.id = "typing-indicator";
-    typingDiv.classList.add("message", "bot", "typing");
-    typingDiv.innerHTML = `
-        <div class="message-header">
-            <span class="sender-name">NeuraBot</span>
-        </div>
-        <div class="typing-animation">
-            <span></span>
-            <span></span>
-            <span></span>
-        </div>
-    `;
-    chatMessages.appendChild(typingDiv);
-    chatMessages.scrollTop = chatMessages.scrollHeight;
-}
-
-function hideTypingIndicator() {
-    const typingIndicator = document.getElementById("typing-indicator");
-    if (typingIndicator) {
-        typingIndicator.remove();
-    }
-}
-
-// Modify sendMessage function
-function sendMessage() {
-    const message = chatInput.value.trim();
-    if (!message) return;
-
-    addMessage(message, "user");
-    chatInput.value = "";
-    sendBtn.disabled = true;
-    
-    // Show typing indicator
-    showTypingIndicator();
-
-    fetch("http://127.0.0.1:5000/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message })
-    })
-    .then(res => res.json())
-    .then(data => {
-        hideTypingIndicator();
-        addMessage(data.reply, "bot");
-    })
-    .catch(err => {
-        hideTypingIndicator();
-        addMessage("Sorry, I couldn't connect to the AI backend.", "bot");
-        console.error("Chat error:", err);
-    })
-    .finally(() => {
-        sendBtn.disabled = false;
-    });
-}
