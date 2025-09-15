@@ -131,7 +131,7 @@ function addMessage(content, sender, saveToHistory = true, timestamp = null) {
   const msgDiv = document.createElement("div");
   msgDiv.classList.add("message", sender);
   
-  // Message header with sender name and actions
+  // Combined message header with sender name, actions, and timestamp
   const messageHeader = document.createElement("div");
   messageHeader.classList.add("message-header");
   
@@ -150,8 +150,16 @@ function addMessage(content, sender, saveToHistory = true, timestamp = null) {
   
   messageActions.appendChild(copyBtn);
   
+  // Add timestamp to header
+  const timeStamp = document.createElement("span");
+  timeStamp.classList.add("timestamp");
+  timeStamp.textContent = timestamp || new Date().toLocaleTimeString([], { 
+    hour: '2-digit', minute: '2-digit' 
+  });
+  
   messageHeader.appendChild(senderName);
   messageHeader.appendChild(messageActions);
+  messageHeader.appendChild(timeStamp);
   
   // Message content with markdown support
   const messageContent = document.createElement("div");
@@ -163,22 +171,9 @@ function addMessage(content, sender, saveToHistory = true, timestamp = null) {
     hljs.highlightElement(block);
   });
   
-  // Message footer with timestamp
-  const messageFooter = document.createElement("div");
-  messageFooter.classList.add("message-footer");
-  
-  const timeStamp = document.createElement("span");
-  timeStamp.classList.add("timestamp");
-  timeStamp.textContent = timestamp || new Date().toLocaleTimeString([], { 
-    hour: '2-digit', minute: '2-digit' 
-  });
-  
-  messageFooter.appendChild(timeStamp);
-  
-  // Assemble message
+  // Assemble message (removed separate footer)
   msgDiv.appendChild(messageHeader);
   msgDiv.appendChild(messageContent);
-  msgDiv.appendChild(messageFooter);
   
   chatMessages.appendChild(msgDiv);
   
@@ -199,6 +194,17 @@ function addMessage(content, sender, saveToHistory = true, timestamp = null) {
   if (saveToHistory) {
     saveChatHistory();
   }
+}
+function saveChatHistory() {
+  const messages = [];
+  document.querySelectorAll(".message").forEach(msgEl => {
+    const sender = msgEl.classList.contains("user") ? "user" : "bot";
+    const content = msgEl.querySelector(".message-content").textContent;
+    const timestamp = msgEl.querySelector(".timestamp").textContent;
+    messages.push({ sender, content, timestamp });
+  });
+  
+  localStorage.setItem("neurabot_chat_history", JSON.stringify(messages));
 }
 
 // Copy message to clipboard
@@ -453,3 +459,60 @@ window.addEventListener("DOMContentLoaded", () => {
   loadTheme();
   loadSettings();
 });
+// Add typing indicator
+function showTypingIndicator() {
+    const typingDiv = document.createElement("div");
+    typingDiv.id = "typing-indicator";
+    typingDiv.classList.add("message", "bot", "typing");
+    typingDiv.innerHTML = `
+        <div class="message-header">
+            <span class="sender-name">NeuraBot</span>
+        </div>
+        <div class="typing-animation">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    `;
+    chatMessages.appendChild(typingDiv);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function hideTypingIndicator() {
+    const typingIndicator = document.getElementById("typing-indicator");
+    if (typingIndicator) {
+        typingIndicator.remove();
+    }
+}
+
+// Modify sendMessage function
+function sendMessage() {
+    const message = chatInput.value.trim();
+    if (!message) return;
+
+    addMessage(message, "user");
+    chatInput.value = "";
+    sendBtn.disabled = true;
+    
+    // Show typing indicator
+    showTypingIndicator();
+
+    fetch("http://127.0.0.1:5000/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message })
+    })
+    .then(res => res.json())
+    .then(data => {
+        hideTypingIndicator();
+        addMessage(data.reply, "bot");
+    })
+    .catch(err => {
+        hideTypingIndicator();
+        addMessage("Sorry, I couldn't connect to the AI backend.", "bot");
+        console.error("Chat error:", err);
+    })
+    .finally(() => {
+        sendBtn.disabled = false;
+    });
+}
