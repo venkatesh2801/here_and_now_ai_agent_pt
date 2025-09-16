@@ -53,6 +53,15 @@ def chat():
         conversation_history = [{"role": "system", "content": system_prompts["casual"]}]
         print("Conversation reset")
         return jsonify({"reply": "Chat reset! Let's start fresh."})
+        # Detect "add task" command
+    if user_input.lower().startswith("add task"):
+        task_text = user_input.replace("add task", "").strip()
+        return jsonify({"reply": f"✅ Task added: {task_text}", "task": task_text})
+        # Detect "show my tasks"
+    if user_input.lower().startswith("show my tasks"):
+        return jsonify({"reply": "📝 Here are your tasks:", "show_tasks": True})
+
+
 
     # Append user message
     conversation_history.append({"role": "user", "content": user_input})

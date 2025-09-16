@@ -24,6 +24,8 @@ const chatWrapper = document.getElementById("chat-wrapper");
 const fileBtn = document.getElementById("file-btn");
 const fileInput = document.getElementById("file-input");
 const chatModeSelect = document.getElementById("chat-mode");
+let tasks = JSON.parse(localStorage.getItem("neurabot_tasks") || "[]");
+
 
 
 
@@ -688,6 +690,51 @@ function removeTypingIndicator() {
     typingIndicator = null;
   }
 }
+function renderTasks() {
+  const taskList = document.getElementById("task-list");
+  if (!taskList) return;
+
+  taskList.innerHTML = tasks
+    .map(
+      (t, i) => `
+      <li class="task-item">
+        <label>
+          <input type="checkbox" ${t.done ? "checked" : ""} data-index="${i}" class="task-checkbox">
+          <span class="task-text ${t.done ? "done" : ""}">${t.text}</span>
+        </label>
+        <button class="delete-task" data-index="${i}"><i class="fas fa-trash"></i></button>
+      </li>`
+    )
+    .join("");
+}
+
+
+document.getElementById("task-list").addEventListener("click", (e) => {
+  const index = e.target.dataset.index;
+
+  // Checkbox toggle
+  if (e.target.classList.contains("task-checkbox")) {
+    tasks[index].done = e.target.checked;
+    localStorage.setItem("neurabot_tasks", JSON.stringify(tasks));
+    renderTasks();
+  }
+
+  // Delete task
+  if (e.target.classList.contains("delete-task") || e.target.closest(".delete-task")) {
+    const idx = e.target.dataset.index || e.target.closest(".delete-task").dataset.index;
+    tasks.splice(idx, 1);
+    localStorage.setItem("neurabot_tasks", JSON.stringify(tasks));
+    renderTasks();
+  }
+});
+
+
+function addTask(text) {
+  tasks.push({ text, done: false });
+  localStorage.setItem("neurabot_tasks", JSON.stringify(tasks));
+  renderTasks();
+}
+
 
 // Setup event listeners
 function setupEventListeners() {
@@ -709,6 +756,24 @@ function setupEventListeners() {
       const data = await res.json();
       removeTypingIndicator();
       addMessage(data.reply, "bot");
+      // If backend returned a task, add it to sidebar
+      if (data.task) {
+        addTask(data.task);
+      }
+
+      // If backend requested showing tasks, list them
+      if (data.show_tasks) {
+        if (tasks.length === 0) {
+          addMessage("✅ You have no pending tasks!", "bot");
+        } else {
+          const taskList = tasks
+            .map((t, i) => `${i + 1}. ${t.text} ${t.done ? "✔️" : "❌"}`)
+            .join("\n");
+          addMessage("📋 Your tasks:\n" + taskList, "bot");
+        }
+      }
+
+
 
     } catch (err) {
       console.error("Error talking to backend:", err);
@@ -717,7 +782,8 @@ function setupEventListeners() {
     }
   }
 });
-  
+  renderTasks();
+
   // Send message on Enter key
   chatInput.addEventListener("keypress", (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
