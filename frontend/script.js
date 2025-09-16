@@ -21,6 +21,9 @@ const newChatBtn = document.getElementById("new-chat-btn");
 const chatHistoryList = document.getElementById("chat-history-list");
 const clearAllChatsBtn = document.getElementById("clear-all-chats");
 const chatWrapper = document.getElementById("chat-wrapper");
+const fileBtn = document.getElementById("file-btn");
+const fileInput = document.getElementById("file-input");
+
 
 
 // State variables
@@ -653,6 +656,36 @@ function exportChat() {
   
   showNotification("Chat exported successfully");
 }
+// ------------------------------
+// Typing Indicator Helpers
+// ------------------------------
+let typingIndicator = null;
+
+function addTypingIndicator() {
+  if (typingIndicator) return; // already showing
+
+  typingIndicator = document.createElement("div");
+  typingIndicator.classList.add("message", "bot-message", "typing-indicator");
+
+  typingIndicator.innerHTML = `
+    <div class="message-header">
+      <span class="sender">Bot is thinking...</span>
+    </div>
+    <div class="dots">
+      <span></span><span></span><span></span>
+    </div>
+  `;
+
+  chatMessages.appendChild(typingIndicator);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function removeTypingIndicator() {
+  if (typingIndicator) {
+    typingIndicator.remove();
+    typingIndicator = null;
+  }
+}
 
 // Setup event listeners
 function setupEventListeners() {
@@ -662,7 +695,7 @@ function setupEventListeners() {
   if (message) {
     addMessage(message, "user");
     chatInput.value = "";
-
+    addTypingIndicator();
     try {
       // Call Flask backend
       const res = await fetch("http://127.0.0.1:5000/chat", {
@@ -672,10 +705,12 @@ function setupEventListeners() {
       });
 
       const data = await res.json();
+      removeTypingIndicator();
       addMessage(data.reply, "bot");
 
     } catch (err) {
       console.error("Error talking to backend:", err);
+      removeTypingIndicator();
       addMessage("⚠️ Oops! Could not connect to server.", "bot");
     }
   }
@@ -691,6 +726,33 @@ function setupEventListeners() {
   
   // Voice input button
   voiceInputBtn.addEventListener("click", toggleVoiceInput);
+
+  fileBtn.addEventListener("click", () => fileInput.click());
+
+  fileInput.addEventListener("change", async () => {
+    const file = fileInput.files[0];
+    if (!file) return;
+
+    addMessage(`📎 Uploaded file: **${file.name}**`, "user");
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const res = await fetch("http://127.0.0.1:5000/upload", {
+        method: "POST",
+        body: formData
+      });
+
+      const data = await res.json();
+      addMessage(`✅ File processed: ${data.filename}`, "bot");
+    } catch (err) {
+      console.error("File upload error:", err);
+      addMessage("⚠️ Failed to upload file.", "bot");
+    }
+
+    fileInput.value = ""; // reset
+  });
   
   // Toggle sidebar
   menuBtn.addEventListener("click", toggleSidebar);

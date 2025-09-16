@@ -80,6 +80,50 @@ def chat():
 
     return jsonify({"reply": full_reply})
 
+import os
+
+UPLOAD_FOLDER = "uploads"
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+@app.route("/upload", methods=["POST"])
+def upload_file():
+    if "file" not in request.files:
+        return jsonify({"error": "No file uploaded"}), 400
+    
+    file = request.files["file"]
+    if file.filename == "":
+        return jsonify({"error": "Empty filename"}), 400
+
+    filepath = os.path.join(UPLOAD_FOLDER, file.filename)
+    file.save(filepath)
+
+    # Read file content (txt/pdf only for now)
+    content = ""
+    if file.filename.endswith(".txt"):
+        with open(filepath, "r", encoding="utf-8") as f:
+            content = f.read()
+    elif file.filename.endswith(".pdf"):
+        try:
+            from PyPDF2 import PdfReader
+            reader = PdfReader(filepath)
+            content = "\n".join([page.extract_text() for page in reader.pages if page.extract_text()])
+        except Exception as e:
+            return jsonify({"error": f"PDF parsing failed: {str(e)}"}), 500
+    else:
+        return jsonify({"error": "Unsupported file type"}), 400
+
+    # Store file content in conversation memory
+    global conversation_history
+    conversation_history.append({
+        "role": "system",
+        "content": f"User uploaded file {file.filename}. Content:\n{content[:2000]}..."
+    })
+
+    return jsonify({
+        "filename": file.filename,
+        "preview": content[:500]
+    })
+
 # ------------------------------
 # Run Flask
 # ------------------------------
