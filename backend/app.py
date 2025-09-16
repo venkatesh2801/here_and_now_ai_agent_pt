@@ -3,7 +3,7 @@ from flask_cors import CORS
 from langchain_google_genai import ChatGoogleGenerativeAI
 from dotenv import load_dotenv
 import os
-from prompt import system_prompt
+from prompt import system_prompts
 
 # ------------------------------
 # Load environment variables
@@ -33,7 +33,7 @@ app = Flask(__name__)
 CORS(app)  # Allow cross-origin requests from frontend
 
 # Conversation memory
-conversation_history = [{"role": "system", "content": system_prompt}]
+conversation_history = [{"role": "system", "content": system_prompts["casual"]}]
 
 # ------------------------------
 # Chat endpoint
@@ -43,13 +43,14 @@ def chat():
     global conversation_history
     data = request.json
     user_input = data.get("message", "").strip()
+    mode = data.get("mode", "casual") 
     print("Received user_input:", user_input)
 
     if not user_input:
         return jsonify({"reply": "Please type a message."})
 
     if user_input.lower() == "reset":
-        conversation_history = [{"role": "system", "content": system_prompt}]
+        conversation_history = [{"role": "system", "content": system_prompts["casual"]}]
         print("Conversation reset")
         return jsonify({"reply": "Chat reset! Let's start fresh."})
 

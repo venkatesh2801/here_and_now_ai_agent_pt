@@ -23,6 +23,8 @@ const clearAllChatsBtn = document.getElementById("clear-all-chats");
 const chatWrapper = document.getElementById("chat-wrapper");
 const fileBtn = document.getElementById("file-btn");
 const fileInput = document.getElementById("file-input");
+const chatModeSelect = document.getElementById("chat-mode");
+
 
 
 
@@ -701,7 +703,7 @@ function setupEventListeners() {
       const res = await fetch("http://127.0.0.1:5000/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message })
+        body: JSON.stringify({ message, mode: chatModeSelect.value })
       });
 
       const data = await res.json();
