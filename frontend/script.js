@@ -17,11 +17,18 @@ const saveProfileBtn = document.getElementById("save-profile");
 const quickReplies = document.querySelectorAll(".quick-reply");
 const voiceInputToggle = document.getElementById("voice-input-toggle");
 const currentAvatar = document.getElementById("current-avatar");
+const newChatBtn = document.getElementById("new-chat-btn");
+const chatHistoryList = document.getElementById("chat-history-list");
+const clearAllChatsBtn = document.getElementById("clear-all-chats");
+const chatWrapper = document.getElementById("chat-wrapper");
+
 
 // State variables
 let isListening = false;
 let recognition = null;
 let currentTheme = "dark";
+let currentChatId = null;
+let chatSessions = {};
 let userData = {
   name: "User",
   avatarType: "male"
@@ -30,18 +37,169 @@ let userData = {
 // Initialize the application
 function initApp() {
   loadUserData();
-  loadChatHistory();
+  loadChatSessions();
   setupEventListeners();
   setupSpeechRecognition();
   applyTheme(currentTheme);
   
   // Show welcome message if no history
-  if (chatMessages.children.length === 0) {
-    setTimeout(() => {
-      addMessage("Hello! I'm NeuraBot, your AI assistant. How can I help you today?", "bot");
-    }, 1000);
+  if (Object.keys(chatSessions).length === 0) {
+    createNewChat();
+  } else {
+    // Load the most recent chat
+    const chatIds = Object.keys(chatSessions);
+    currentChatId = chatIds[chatIds.length - 1];
+    loadChat(currentChatId);
   }
 }
+
+function loadChatSessions() {
+  const savedSessions = localStorage.getItem("neurabot_chat_sessions");
+  if (savedSessions) {
+    chatSessions = JSON.parse(savedSessions);
+    renderChatHistoryList();
+  }
+}
+
+function saveChatSessions() {
+  localStorage.setItem("neurabot_chat_sessions", JSON.stringify(chatSessions));
+}
+
+// Create a new chat session
+function createNewChat() {
+  const chatId = Date.now().toString();
+  currentChatId = chatId;
+  
+  chatSessions[chatId] = {
+    id: chatId,
+    title: "New Chat",
+    messages: [],
+    createdAt: new Date().toISOString()
+  };
+  
+  saveChatSessions();
+  renderChatHistoryList();
+  
+  // Clear the chat messages container
+  chatMessages.innerHTML = "";
+  
+  // Show welcome message
+  setTimeout(() => {
+    addMessage("Hello! I'm NeuraBot, your AI assistant. How can I help you today?", "bot");
+  }, 500);
+  
+  return chatId;
+}
+
+function loadChat(chatId) {
+  if (!chatSessions[chatId]) return;
+  
+  currentChatId = chatId;
+  
+  // Clear the chat messages container
+  chatMessages.innerHTML = "";
+  
+  // Load messages for this chat
+  chatSessions[chatId].messages.forEach(msg => {
+    addMessage(msg.content, msg.sender, false, msg.timestamp);
+  });
+  
+  // Update active state in history list
+  document.querySelectorAll('.chat-history-item').forEach(item => {
+    item.classList.remove('active');
+    if (item.dataset.chatId === chatId) {
+      item.classList.add('active');
+    }
+  });
+  
+  // Close sidebar on mobile
+  if (window.innerWidth < 768) {
+    toggleSidebar();
+  }
+}
+
+function renderChatHistoryList() {
+  chatHistoryList.innerHTML = '';
+  
+  if (Object.keys(chatSessions).length === 0) {
+    chatHistoryList.innerHTML = '<div class="empty-history">No chat history yet</div>';
+    return;
+  }
+  
+  // Sort chats by date (newest first)
+  const sortedChats = Object.values(chatSessions).sort((a, b) => {
+    return new Date(b.createdAt) - new Date(a.createdAt);
+  });
+  
+  sortedChats.forEach(chat => {
+    const historyItem = document.createElement('div');
+    historyItem.classList.add('chat-history-item');
+    if (chat.id === currentChatId) {
+      historyItem.classList.add('active');
+    }
+    historyItem.dataset.chatId = chat.id;
+    
+    historyItem.innerHTML = `
+      <div class="chat-title" title="${chat.title}">${chat.title}</div>
+      <div class="chat-actions">
+        <button class="chat-action-btn delete-chat" title="Delete chat">
+          <i class="fas fa-trash"></i>
+        </button>
+      </div>
+    `;
+    
+    historyItem.addEventListener('click', (e) => {
+      if (!e.target.closest('.chat-actions')) {
+        loadChat(chat.id);
+      }
+    });
+    
+    const deleteBtn = historyItem.querySelector('.delete-chat');
+    deleteBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      deleteChat(chat.id);
+    });
+    
+    chatHistoryList.appendChild(historyItem);
+  });
+}
+
+// Delete a chat session
+function deleteChat(chatId) {
+  showConfirm("Are you sure you want to delete this chat?", (confirmed) => {
+    if (confirmed) {
+      delete chatSessions[chatId];
+      saveChatSessions();
+      
+      if (currentChatId === chatId) {
+        if (Object.keys(chatSessions).length > 0) {
+          const chatIds = Object.keys(chatSessions);
+          currentChatId = chatIds[chatIds.length - 1];
+          loadChat(currentChatId);
+        } else {
+          createNewChat();
+        }
+      }
+      
+      renderChatHistoryList();
+      showNotification("Chat deleted");
+    }
+  });
+}
+
+
+function clearAllChats() {
+  showConfirm("Are you sure you want to clear ALL chat history?", (confirmed) => {
+    if (confirmed) {
+      chatSessions = {};
+      saveChatSessions();
+      createNewChat();
+      renderChatHistoryList();
+      showNotification("All chat history cleared");
+    }
+  });
+}
+
 
 // Load user data from localStorage
 function loadUserData() {
@@ -95,67 +253,6 @@ function updateCurrentAvatar() {
 function saveUserData() {
   localStorage.setItem("neurabot_user", JSON.stringify(userData));
   showNotification("Profile saved successfully!");
-}
-
-// Load chat history from localStorage
-function loadChatHistory() {
-  const history = localStorage.getItem("neurabot_chat_history");
-  if (history) {
-    const messages = JSON.parse(history);
-    messages.forEach(msg => {
-      addMessage(msg.content, msg.sender, false, msg.timestamp);
-    });
-  }
-}
-
-// Save chat history to localStorage
-function saveChatHistory() {
-  const messages = [];
-  document.querySelectorAll(".message").forEach(msgEl => {
-    const sender = msgEl.classList.contains("user") ? "user" : "bot";
-    const content = msgEl.querySelector(".message-content").textContent;
-    const timestamp = msgEl.querySelector(".timestamp").textContent;
-    messages.push({ sender, content, timestamp });
-  });
-  
-  localStorage.setItem("neurabot_chat_history", JSON.stringify(messages));
-}
-
-// Clear chat history
-function clearChatHistory() {
-  if (confirm("Are you sure you want to clear the chat history?")) {
-    chatMessages.innerHTML = "";
-    localStorage.removeItem("neurabot_chat_history");
-    showNotification("Chat history cleared");
-    
-    // Add new welcome message
-    setTimeout(() => {
-      addMessage("Hello! I'm NeuraBot, your AI assistant. How can I help you today?", "bot");
-    }, 500);
-  }
-}
-
-// Export chat as text file
-function exportChat() {
-  let chatText = "NeuraBot Conversation Export\n\n";
-  document.querySelectorAll(".message").forEach(msgEl => {
-    const sender = msgEl.classList.contains("user") ? "You" : "NeuraBot";
-    const content = msgEl.querySelector(".message-content").textContent;
-    const timestamp = msgEl.querySelector(".timestamp").textContent;
-    chatText += `[${timestamp}] ${sender}: ${content}\n`;
-  });
-  
-  const blob = new Blob([chatText], { type: "text/plain" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `neurabot-chat-${new Date().toISOString().slice(0, 10)}.txt`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-  
-  showNotification("Chat exported successfully!");
 }
 
 // Add message to chat
@@ -227,6 +324,50 @@ function addMessage(content, sender, saveToHistory = true, timestamp = null) {
   messageHeader.appendChild(senderName);
   messageHeader.appendChild(messageActions);
   messageHeader.appendChild(timeStamp);
+  if (sender === "bot") {
+    const speakBtn = document.createElement("button");
+    speakBtn.classList.add("speak-btn");
+    speakBtn.innerHTML = '<i class="fas fa-volume-up"></i>';
+    speakBtn.title = "Read aloud";
+
+    let isSpeaking = false;
+    let utterance = null;
+
+    speakBtn.addEventListener("click", () => {
+      if (!('speechSynthesis' in window)) {
+        showNotification("Speech synthesis not supported in this browser");
+        return;
+      }
+
+      if (!isSpeaking) {
+        // Start speaking
+        utterance = new SpeechSynthesisUtterance(content);
+        utterance.lang = "en-US";
+        utterance.rate = 1;
+        utterance.pitch = 1;
+
+        utterance.onend = () => {
+          isSpeaking = false;
+          speakBtn.innerHTML = '<i class="fas fa-volume-up"></i>';
+          speakBtn.title = "Read aloud";
+        };
+
+        window.speechSynthesis.speak(utterance);
+        isSpeaking = true;
+        speakBtn.innerHTML = '<i class="fas fa-stop"></i>';
+        speakBtn.title = "Stop audio";
+      } else {
+        // Stop speaking
+        window.speechSynthesis.cancel();
+        isSpeaking = false;
+        speakBtn.innerHTML = '<i class="fas fa-volume-up"></i>';
+        speakBtn.title = "Read aloud";
+      }
+    });
+
+    messageHeader.appendChild(speakBtn);
+  }
+
   
   // Message content with markdown support
   const messageContent = document.createElement("div");
@@ -253,8 +394,31 @@ function addMessage(content, sender, saveToHistory = true, timestamp = null) {
   chatMessages.scrollTop = chatMessages.scrollHeight;
   
   // Save to history if needed
-  if (saveToHistory) {
-    saveChatHistory();
+  if (saveToHistory && currentChatId) {
+    // Add message to current chat session
+    if (!chatSessions[currentChatId].messages) {
+      chatSessions[currentChatId].messages = [];
+    }
+    
+    chatSessions[currentChatId].messages.push({
+      content,
+      sender,
+      timestamp: timestamp || new Date().toLocaleTimeString([], { 
+        hour: '2-digit', minute: '2-digit' 
+      })
+    });
+    
+    // Update chat title if it's the first user message
+    if (sender === "user" && chatSessions[currentChatId].title === "New Chat") {
+      // Use first user message as title (max 30 chars)
+      const title = content.length > 30 ? content.substring(0, 30) + "..." : content;
+      chatSessions[currentChatId].title = title;
+      renderChatHistoryList();
+    }
+    
+
+    
+    saveChatSessions();
   }
 }
 
@@ -401,6 +565,31 @@ function applyTheme(theme) {
 // Toggle sidebar
 function toggleSidebar() {
   sidebar.classList.toggle("show");
+  chatWrapper.classList.toggle("sidebar-open");
+  
+  // On mobile, add overlay when sidebar is open
+  if (window.innerWidth < 768) {
+    if (sidebar.classList.contains("show")) {
+      // Create overlay
+      const overlay = document.createElement("div");
+      overlay.id = "sidebar-overlay";
+      overlay.style.position = "fixed";
+      overlay.style.top = "0";
+      overlay.style.left = "0";
+      overlay.style.width = "100%";
+      overlay.style.height = "100%";
+      overlay.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
+      overlay.style.zIndex = "999";
+      overlay.addEventListener("click", toggleSidebar);
+      document.body.appendChild(overlay);
+    } else {
+      // Remove overlay
+      const overlay = document.getElementById("sidebar-overlay");
+      if (overlay) {
+        document.body.removeChild(overlay);
+      }
+    }
+  }
 }
 
 // Toggle profile modal
@@ -422,40 +611,120 @@ function saveProfile() {
   toggleProfileModal();
 }
 
-// Setup event listeners
-function setupEventListeners() {
-  // Send message
-  sendBtn.addEventListener("click", sendMessage);
-  chatInput.addEventListener("keypress", (e) => {
-    if (e.key === "Enter") sendMessage();
+// Clear current chat
+function clearCurrentChat() {
+  showConfirm("Are you sure you want to clear the current chat?", (confirmed) => {
+    if (confirmed) {
+      chatMessages.innerHTML = "";
+      if (currentChatId && chatSessions[currentChatId]) {
+        chatSessions[currentChatId].messages = [];
+        saveChatSessions();
+      }
+      showNotification("Chat cleared");
+    }
+  });
+}
+
+
+// Export chat
+function exportChat() {
+  if (!currentChatId || !chatSessions[currentChatId]) {
+    showNotification("No chat to export");
+    return;
+  }
+  
+  const chat = chatSessions[currentChatId];
+  let exportText = `NeuraBot Chat Export - ${new Date(chat.createdAt).toLocaleDateString()}\n\n`;
+  
+  chat.messages.forEach(msg => {
+    const sender = msg.sender === "user" ? userData.name : "NeuraBot";
+    exportText += `${sender} (${msg.timestamp}):\n${msg.content}\n\n`;
   });
   
-  // Voice input
+  const blob = new Blob([exportText], { type: "text/plain" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `neurabot-chat-${currentChatId}.txt`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  
+  showNotification("Chat exported successfully");
+}
+
+// Setup event listeners
+function setupEventListeners() {
+  // Send message on button click
+  sendBtn.addEventListener("click", async () => {
+  const message = chatInput.value.trim();
+  if (message) {
+    addMessage(message, "user");
+    chatInput.value = "";
+
+    try {
+      // Call Flask backend
+      const res = await fetch("http://127.0.0.1:5000/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message })
+      });
+
+      const data = await res.json();
+      addMessage(data.reply, "bot");
+
+    } catch (err) {
+      console.error("Error talking to backend:", err);
+      addMessage("⚠️ Oops! Could not connect to server.", "bot");
+    }
+  }
+});
+  
+  // Send message on Enter key
+  chatInput.addEventListener("keypress", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendBtn.click();
+    }
+  });
+  
+  // Voice input button
   voiceInputBtn.addEventListener("click", toggleVoiceInput);
   
-  // Sidebar
+  // Toggle sidebar
   menuBtn.addEventListener("click", toggleSidebar);
   closeSidebar.addEventListener("click", toggleSidebar);
   
-  // Theme toggling
+  // Theme toggle
   themeToggle.addEventListener("click", () => {
     const newTheme = currentTheme === "dark" ? "light" : "dark";
     applyTheme(newTheme);
   });
   
+  // Theme buttons
   themeButtons.forEach(btn => {
     btn.addEventListener("click", () => {
       applyTheme(btn.dataset.theme);
     });
   });
   
-  // Chat management
-  clearChatBtn.addEventListener("click", clearChatHistory);
+  // Clear chat button
+  clearChatBtn.addEventListener("click", clearCurrentChat);
+  
+  // Clear all chats button
+  clearAllChatsBtn.addEventListener("click", clearAllChats);
+  
+  // Export chat button
   exportChatBtn.addEventListener("click", exportChat);
   
-  // Profile modal
+  // User profile button
   userProfileBtn.addEventListener("click", toggleProfileModal);
+  
+  // Close modal button
   closeModalBtn.addEventListener("click", toggleProfileModal);
+  
+  // Save profile button
   saveProfileBtn.addEventListener("click", saveProfile);
   
   // Avatar selection
@@ -468,102 +737,88 @@ function setupEventListeners() {
   });
   
   // Quick replies
-  quickReplies.forEach(reply => {
-    reply.addEventListener("click", () => {
-      chatInput.value = reply.dataset.message;
-      sendMessage();
+  quickReplies.forEach(btn => {
+    btn.addEventListener("click", () => {
+      const message = btn.dataset.message;
+      chatInput.value = message;
+      sendBtn.click();
     });
   });
-
-  // Voice input toggle
-  voiceInputToggle.addEventListener("change", (e) => {
-    const enabled = e.target.checked;
-    localStorage.setItem("neurabot_voice_input", enabled ? "true" : "false");
-    voiceInputBtn.style.display = enabled ? "inline-flex" : "none";
-  });
-
-  // Profile name input
-  document.getElementById("user-name").addEventListener("input", (e) => {
-    userData.name = e.target.value;
-  });
-}
-
-// Send message to backend
-function sendMessage() {
-  const message = chatInput.value.trim();
-  if (!message) return;
-
-  addMessage(message, "user");
-  chatInput.value = "";
-  sendBtn.disabled = true;
   
-  // Show typing indicator
-  showTypingIndicator();
-
-  fetch("http://127.0.0.1:5000/chat", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ message })
-  })
-    .then(res => res.json())
-    .then(data => {
-      hideTypingIndicator();
-      addMessage(data.reply, "bot");
-    })
-    .catch(err => {
-      hideTypingIndicator();
-      addMessage("Sorry, I couldn't connect to the AI backend.", "bot");
-      console.error("Chat error:", err);
-    })
-    .finally(() => {
-      sendBtn.disabled = false;
-    });
-}
-
-// Load theme from localStorage
-function loadTheme() {
+  // Voice input toggle in settings
+  voiceInputToggle.addEventListener("change", () => {
+    if (voiceInputToggle.checked) {
+      voiceInputBtn.style.display = "flex";
+    } else {
+      voiceInputBtn.style.display = "none";
+      if (isListening) stopVoiceInput();
+    }
+  });
+  
+  // New chat button
+  newChatBtn.addEventListener("click", () => {
+    createNewChat();
+  });
+  
+  // Close sidebar when clicking outside on mobile
+  document.addEventListener("click", (e) => {
+    if (window.innerWidth < 768 && 
+        sidebar.classList.contains("show") && 
+        !sidebar.contains(e.target) && 
+        !menuBtn.contains(e.target)) {
+      toggleSidebar();
+    }
+  });
+  
+  // Load saved theme
   const savedTheme = localStorage.getItem("neurabot_theme");
   if (savedTheme) {
     applyTheme(savedTheme);
   }
+  
+  // Load voice input preference
+  const voiceInputEnabled = localStorage.getItem("neurabot_voice_input") === "true";
+  voiceInputToggle.checked = voiceInputEnabled;
+  voiceInputBtn.style.display = voiceInputEnabled ? "flex" : "none";
+  
+  voiceInputToggle.addEventListener("change", () => {
+    localStorage.setItem("neurabot_voice_input", voiceInputToggle.checked);
+  });
 }
+function showConfirm(message, callback) {
+  const modal = document.getElementById("confirm-modal");
+  const msg = document.getElementById("confirm-message");
+  const okBtn = document.getElementById("confirm-ok");
+  const cancelBtn = document.getElementById("confirm-cancel");
 
-// Load voice input settings
-function loadSettings() {
-  const voiceEnabled = localStorage.getItem("neurabot_voice_input");
-  voiceInputToggle.checked = voiceEnabled !== "false";
-  voiceInputBtn.style.display = voiceInputToggle.checked ? "inline-flex" : "none";
+  msg.textContent = message;
+  modal.classList.add("show");
+
+  const closeModal = () => {
+    modal.classList.remove("show");
+    okBtn.removeEventListener("click", onOk);
+    cancelBtn.removeEventListener("click", onCancel);
+  };
+
+  const onOk = () => { closeModal(); callback(true); };
+  const onCancel = () => { closeModal(); callback(false); };
+
+  okBtn.addEventListener("click", onOk);
+  cancelBtn.addEventListener("click", onCancel);
 }
-
-// Add typing indicator
-function showTypingIndicator() {
-  const typingDiv = document.createElement("div");
-  typingDiv.id = "typing-indicator";
-  typingDiv.classList.add("message", "bot", "typing");
-  typingDiv.innerHTML = `
-    <div class="message-header">
-      <span class="sender-name">NeuraBot</span>
-    </div>
-    <div class="typing-animation">
-      <span></span>
-      <span></span>
-      <span></span>
-    </div>
-  `;
-  chatMessages.appendChild(typingDiv);
-  chatMessages.scrollTop = chatMessages.scrollHeight;
-}
-
-function hideTypingIndicator() {
-  const typingIndicator = document.getElementById("typing-indicator");
-  if (typingIndicator) {
-    typingIndicator.remove();
+function speakText(text) {
+  if (!('speechSynthesis' in window)) {
+    console.warn("Speech synthesis not supported in this browser");
+    return;
   }
-}
 
-// App entry point
-window.addEventListener("DOMContentLoaded", () => {
-  initApp();
-  loadTheme();
-  loadSettings();
-});
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = "en-US";   // you can change to "en-GB", "hi-IN", etc.
+  utterance.rate = 1;         // speed (0.5 = slow, 1 = normal, 1.5 = fast)
+  utterance.pitch = 1;        // tone (0 = low, 2 = high)
+
+  window.speechSynthesis.cancel(); // stop any ongoing speech
+  window.speechSynthesis.speak(utterance);
+}
+// Initialize the app when DOM is loaded
+document.addEventListener("DOMContentLoaded", initApp);

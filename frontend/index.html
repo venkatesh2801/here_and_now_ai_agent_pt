@@ -9,12 +9,28 @@
 </head>
 <body>
   <div id="app-container">
-    <!-- Sidebar for additional features -->
+    <!-- Single sidebar for all features -->
     <div id="sidebar">
       <div id="sidebar-header">
         <button id="close-sidebar"><i class="fas fa-times"></i></button>
       </div>
       <div id="sidebar-content">
+        <!-- New Chat Button -->
+        <div class="sidebar-section">
+          <button id="new-chat-btn" class="new-chat-btn">
+            <i class="fas fa-plus"></i> New Chat
+          </button>
+        </div>
+        
+        <!-- Chat History -->
+        <div class="sidebar-section">
+          <h4>Chat History</h4>
+          <div id="chat-history-list">
+            <!-- Chat history items will be added here dynamically -->
+          </div>
+        </div>
+        
+        <!-- Theme section -->
         <div class="sidebar-section">
           <h4>Theme</h4>
           <div class="theme-switcher">
@@ -24,16 +40,21 @@
           </div>
         </div>
         
+        <!-- Chat Options -->
         <div class="sidebar-section">
           <h4>Chat Options</h4>
           <button id="clear-chat" class="sidebar-btn">
-            <i class="fas fa-trash"></i> Clear Chat
+            <i class="fas fa-trash"></i> Clear Current Chat
+          </button>
+          <button id="clear-all-chats" class="sidebar-btn">
+            <i class="fas fa-trash-alt"></i> Clear All Chats
           </button>
           <button id="export-chat" class="sidebar-btn">
             <i class="fas fa-download"></i> Export Chat
           </button>
         </div>
         
+        <!-- Settings -->
         <div class="sidebar-section">
           <h4>Settings</h4>
           <div class="setting-item">
@@ -52,7 +73,7 @@
       <div id="chat-container">
         <div id="chat-header">
           <button id="menu-btn"><i class="fas fa-bars"></i></button>
-          <h2>NeuraBot <span class="pulse"></span></h2>
+          <h2>NeuraBot <span class="pulse">🤖</span></h2>
           <div id="header-controls">
             <button id="theme-toggle"><i class="fas fa-moon"></i></button>
             <button id="user-profile">
@@ -93,62 +114,62 @@
         </div>
         <div class="modal-body">
           <div class="avatar-selection">
-  <h4>Choose Avatar</h4>
-  <div class="avatars">
-    <div class="avatar" data-avatar="male">
-      <svg class="avatar-svg" viewBox="0 0 100 100">
-        <circle cx="50" cy="35" r="20" fill="#4a8cff"/>
-        <rect x="40" y="55" width="20" height="35" fill="#4a8cff"/>
-        <rect x="30" y="65" width="10" height="25" fill="#4a8cff"/>
-        <rect x="60" y="65" width="10" height="25" fill="#4a8cff"/>
-      </svg>
-    </div>
-    <div class="avatar" data-avatar="female">
-      <svg class="avatar-svg" viewBox="0 0 100 100">
-        <circle cx="50" cy="35" r="20" fill="#ff6b8b"/>
-        <path d="M40,55 L60,55 L50,90 Z" fill="#ff6b8b"/>
-        <rect x="30" y="65" width="10" height="25" fill="#ff6b8b"/>
-        <rect x="60" y="65" width="10" height="25" fill="#ff6b8b"/>
-      </svg>
-    </div>
-    <div class="avatar" data-avatar="robot">
-      <svg class="avatar-svg" viewBox="0 0 100 100">
-        <rect x="30" y="25" width="40" height="45" rx="5" fill="#7e57c2"/>
-        <circle cx="40" cy="40" r="5" fill="#fff"/>
-        <circle cx="60" cy="40" r="5" fill="#fff"/>
-        <rect x="40" y="55" width="20" height="10" rx="2" fill="#fff"/>
-        <rect x="20" y="70" width="20" height="25" rx="5" fill="#7e57c2"/>
-        <rect x="60" y="70" width="20" height="25" rx="5" fill="#7e57c2"/>
-      </svg>
-    </div>
-    <div class="avatar" data-avatar="ai">
-      <svg class="avatar-svg" viewBox="0 0 100 100">
-        <circle cx="50" cy="50" r="40" fill="#26c6da"/>
-        <path d="M35,40 L45,60 L30,60 Z" fill="#fff"/>
-        <path d="M65,40 L75,60 L60,60 Z" fill="#fff"/>
-        <path d="M45,70 L55,70 L50,80 Z" fill="#fff"/>
-      </svg>
-    </div>
-    <div class="avatar" data-avatar="cyber">
-      <svg class="avatar-svg" viewBox="0 0 100 100">
-        <rect x="25" y="25" width="50" height="50" rx="5" fill="#ff7043"/>
-        <circle cx="40" cy="40" r="5" fill="#fff"/>
-        <circle cx="60" cy="40" r="5" fill="#fff"/>
-        <rect x="40" y="55" width="20" height="10" rx="2" fill="#fff"/>
-        <line x1="30" y1="70" x2="70" y2="70" stroke="#fff" stroke-width="3"/>
-      </svg>
-    </div>
-    <div class="avatar" data-avatar="astro">
-      <svg class="avatar-svg" viewBox="0 0 100 100">
-        <circle cx="50" cy="40" r="25" fill="#bdbdbd"/>
-        <circle cx="50" cy="40" r="15" fill="#fff"/>
-        <rect x="40" y="65" width="20" height="25" fill="#bdbdbd"/>
-        <rect x="30" y="75" width="10" height="15" fill="#bdbdbd"/>
-        <rect x="60" y="75" width="10" height="15" fill="#bdbdbd"/>
-      </svg>
-    </div>
-  </div>
-</div>
+            <h4>Choose Avatar</h4>
+            <div class="avatars">
+              <div class="avatar" data-avatar="male">
+                <svg class="avatar-svg" viewBox="0 0 100 100">
+                  <circle cx="50" cy="35" r="20" fill="#4a8cff"/>
+                  <rect x="40" y="55" width="20" height="35" fill="#4a8cff"/>
+                  <rect x="30" y="65" width="10" height="25" fill="#4a8cff"/>
+                  <rect x="60" y="65" width="10" height="25" fill="#4a8cff"/>
+                </svg>
+              </div>
+              <div class="avatar" data-avatar="female">
+                <svg class="avatar-svg" viewBox="0 0 100 100">
+                  <circle cx="50" cy="35" r="20" fill="#ff6b8b"/>
+                  <path d="M40,55 L60,55 L50,90 Z" fill="#ff6b8b"/>
+                  <rect x="30" y="65" width="10" height="25" fill="#ff6b8b"/>
+                  <rect x="60" y="65" width="10" height="25" fill="#ff6b8b"/>
+                </svg>
+              </div>
+              <div class="avatar" data-avatar="robot">
+                <svg class="avatar-svg" viewBox="0 0 100 100">
+                  <rect x="30" y="25" width="40" height="45" rx="5" fill="#7e57c2"/>
+                  <circle cx="40" cy="40" r="5" fill="#fff"/>
+                  <circle cx="60" cy="40" r="5" fill="#fff"/>
+                  <rect x="40" y="55" width="20" height="10" rx="2" fill="#fff"/>
+                  <rect x="20" y="70" width="20" height="25" rx="5" fill="#7e57c2"/>
+                  <rect x="60" y="70" width="20" height="25" rx="5" fill="#7e57c2"/>
+                </svg>
+              </div>
+              <div class="avatar" data-avatar="ai">
+                <svg class="avatar-svg" viewBox="0 0 100 100">
+                  <circle cx="50" cy="50" r="40" fill="#26c6da"/>
+                  <path d="M35,40 L45,60 L30,60 Z" fill="#fff"/>
+                  <path d="M65,40 L75,60 L60,60 Z" fill="#fff"/>
+                  <path d="M45,70 L55,70 L50,80 Z" fill="#fff"/>
+                </svg>
+              </div>
+              <div class="avatar" data-avatar="cyber">
+                <svg class="avatar-svg" viewBox="0 0 100 100">
+                  <rect x="25" y="25" width="50" height="50" rx="5" fill="#ff7043"/>
+                  <circle cx="40" cy="40" r="5" fill="#fff"/>
+                  <circle cx="60" cy="40" r="5" fill="#fff"/>
+                  <rect x="40" y="55" width="20" height="10" rx="2" fill="#fff"/>
+                  <line x1="30" y1="70" x2="70" y2="70" stroke="#fff" stroke-width="3"/>
+                </svg>
+              </div>
+              <div class="avatar" data-avatar="astro">
+                <svg class="avatar-svg" viewBox="0 0 100 100">
+                  <circle cx="50" cy="40" r="25" fill="#bdbdbd"/>
+                  <circle cx="50" cy="40" r="15" fill="#fff"/>
+                  <rect x="40" y="65" width="20" height="25" fill="#bdbdbd"/>
+                  <rect x="30" y="75" width="10" height="15" fill="#bdbdbd"/>
+                  <rect x="60" y="75" width="10" height="15" fill="#bdbdbd"/>
+                </svg>
+              </div>
+            </div>
+          </div>
           <div class="name-input">
             <label for="user-name">Your Name</label>
             <input type="text" id="user-name" placeholder="Enter your name">
@@ -159,7 +180,23 @@
         </div>
       </div>
     </div>
+    <div id="confirm-modal" class="modal">
+  <div class="confirm-modal-content">
+    <div class="confirm-modal-header">
+      <h3 id="confirm-title">Confirm Action</h3>
+    </div>
+    <div class="confirm-modal-body">
+      <p id="confirm-message">Are you sure?</p>
+    </div>
+    <div class="confirm-modal-footer">
+      <button id="confirm-cancel" class="confirm-btn cancel">Cancel</button>
+      <button id="confirm-ok" class="confirm-btn ok">Yes</button>
+    </div>
   </div>
+</div>
+  </div>
+
+
 
   <!-- Notification element -->
   <div id="notification"></div>
